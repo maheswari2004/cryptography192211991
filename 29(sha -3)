@@ -1,0 +1,55 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <time.h>
+
+#define LANES 25
+#define LANE_SIZE 64
+
+// State matrix
+uint64_t state[LANES];
+
+// Function to initialize state
+void initialize_state() {
+    for (int i = 0; i < LANES; i++) {
+        state[i] = 0;
+    }
+
+    // Assume the first message block P0 has at least one nonzero bit in each lane
+    for (int i = 0; i < LANES / 2; i++) {
+        state[i] = rand() | 1; // Ensure at least one nonzero bit
+    }
+}
+
+// Function to simulate message absorption
+void absorb_message_block() {
+    for (int i = 0; i < LANES; i++) {
+        uint64_t message_block = rand() | 1; // Ensure at least one nonzero bit
+        state[i] ^= message_block;
+    }
+}
+
+// Function to check if all capacity lanes are nonzero
+int all_capacity_lanes_nonzero() {
+    for (int i = LANES / 2; i < LANES; i++) {
+        if (state[i] == 0) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int main() {
+    srand(time(NULL));
+    initialize_state();
+
+    int iterations = 0;
+    while (!all_capacity_lanes_nonzero()) {
+        absorb_message_block();
+        iterations++;
+    }
+
+    printf("All capacity lanes became nonzero after %d iterations.\n", iterations);
+
+    return 0;
+}
