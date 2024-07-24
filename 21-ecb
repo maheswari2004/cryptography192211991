@@ -1,0 +1,109 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#define BLOCK_SIZE 8 // Block size in bytes
+
+// Simple XOR-based block cipher for demonstration
+void block_cipher(uint8_t *block, const uint8_t *key) {
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        block[i] ^= key[i];
+    }
+}
+
+// Padding function
+void pad(uint8_t *data, size_t *data_len) {
+    size_t pad_len = BLOCK_SIZE - (*data_len % BLOCK_SIZE);
+    if (pad_len == BLOCK_SIZE) pad_len = 0; // No padding needed if already a multiple
+    data[*data_len] = 0x80; // Padding bit 1
+    memset(data + *data_len + 1, 0, pad_len - 1);
+    *data_len += pad_len;
+}
+
+// ECB Mode Encryption
+void ecb_encrypt(uint8_t *data, size_t data_len, const uint8_t *key) {
+    for (size_t i = 0; i < data_len; i += BLOCK_SIZE) {
+        block_cipher(data + i, key);
+    }
+}
+
+// CBC Mode Encryption
+void cbc_encrypt(uint8_t *data, size_t data_len, const uint8_t *key, const uint8_t *iv) {
+    uint8_t previous_block[BLOCK_SIZE];
+    memcpy(previous_block, iv, BLOCK_SIZE);
+
+    for (size_t i = 0; i < data_len; i += BLOCK_SIZE) {
+        for (int j = 0; j < BLOCK_SIZE; j++) {
+            data[i + j] ^= previous_block[j];
+        }
+        block_cipher(data + i, key);
+        memcpy(previous_block, data + i, BLOCK_SIZE);
+    }
+}
+
+// CFB Mode Encryption
+void cfb_encrypt(uint8_t *data, size_t data_len, const uint8_t *key, const uint8_t *iv) {
+    uint8_t keystream[BLOCK_SIZE];
+    uint8_t feedback[BLOCK_SIZE];
+    memcpy(feedback, iv, BLOCK_SIZE);
+
+    for (size_t i = 0; i < data_len; i += BLOCK_SIZE) {
+        block_cipher(feedback, key);
+        for (int j = 0; j < BLOCK_SIZE; j++) {
+            keystream[j] = feedback[j];
+        }
+        for (int j = 0; j < BLOCK_SIZE && i + j < data_len; j++) {
+            data[i + j] ^= keystream[j];
+        }
+        memcpy(feedback, data + i, BLOCK_SIZE);
+    }
+}
+
+// Print data in hexadecimal format
+void print_data(const uint8_t *data, size_t data_len) {
+    for (size_t i = 0; i < data_len; i++) {
+        printf("%02x", data[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+    // Example key and IV (Initialization Vector)
+    uint8_t key[BLOCK_SIZE] = {0x1f, 0x2e, 0x3d, 0x4c, 0x5b, 0x6a, 0x79, 0x88};
+    uint8_t iv[BLOCK_SIZE] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+
+    // Example plaintext
+    uint8_t data[16] = "HelloWorld12345";
+    size_t data_len = 16;
+
+    // Padding
+    printf("Original Data: ");
+    print_data(data, data_len);
+    pad(data, &data_len);
+    printf("Padded Data: ");
+    print_data(data, data_len);
+
+    // ECB Mode Encryption
+    uint8_t ecb_data[16];
+    memcpy(ecb_data, data, 16);
+    ecb_encrypt(ecb_data, data_len, key);
+    printf("ECB Encrypted Data: ");
+    print_data(ecb_data, data_len);
+
+    // CBC Mode Encryption
+    uint8_t cbc_data[16];
+    memcpy(cbc_data, data, 16);
+    cbc_encrypt(cbc_data, data_len, key, iv);
+    printf("CBC Encrypted Data: ");
+    print_data(cbc_data, data_len);
+
+    // CFB Mode Encryption
+    uint8_t cfb_data[16];
+    memcpy(cfb_data, data, 16);
+    cfb_encrypt(cfb_data, data_len, key, iv);
+    printf("CFB Encrypted Data: ");
+    print_data(cfb_data, data_len);
+
+    return 0;
+}
