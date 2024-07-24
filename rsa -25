@@ -1,0 +1,44 @@
+#include <stdio.h>
+#include <stdint.h>
+
+// Function to compute gcd of two numbers
+uint64_t gcd(uint64_t a, uint64_t b) {
+    while (b != 0) {
+        uint64_t temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}
+
+// Function to factorize n if a common factor is known
+void factorize_n(uint64_t n, uint64_t common_factor) {
+    if (common_factor == 1 || common_factor == n) {
+        printf("No useful factor found.\n");
+        return;
+    }
+
+    uint64_t p = common_factor;
+    uint64_t q = n / p;
+
+    printf("Factors of n are:\n");
+    printf("p = %llu\n", p);
+    printf("q = %llu\n", q);
+}
+
+// Main function
+int main() {
+    uint64_t n = 3233; // Example modulus (p=61, q=53)
+    uint64_t known_plaintext_block = 51; // Example block known to have a common factor with n
+
+    // Find common factor
+    uint64_t common_factor = gcd(known_plaintext_block, n);
+
+    // Print the common factor
+    printf("Common factor between plaintext block and n: %llu\n", common_factor);
+
+    // Factorize n using the common factor
+    factorize_n(n, common_factor);
+
+    return 0;
+}
