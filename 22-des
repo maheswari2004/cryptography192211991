@@ -1,0 +1,105 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+// Define constants
+#define BLOCK_SIZE 8
+#define KEY_SIZE 10
+
+// Simplified DES (S-DES) functions (placeholders for demonstration)
+void sdes_key_schedule(uint8_t *key, uint8_t *key1, uint8_t *key2) {
+    // Placeholder: Generate subkeys key1 and key2 from key
+    memcpy(key1, key, BLOCK_SIZE); // Simplified
+    memcpy(key2, key, BLOCK_SIZE); // Simplified
+}
+
+void sdes_encrypt_block(uint8_t *block, uint8_t *key) {
+    // Placeholder: Implement S-DES encryption on the block
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        block[i] ^= key[i];
+    }
+}
+
+void sdes_decrypt_block(uint8_t *block, uint8_t *key) {
+    // Placeholder: Implement S-DES decryption on the block
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        block[i] ^= key[i];
+    }
+}
+
+// XOR function
+void xor_blocks(uint8_t *a, uint8_t *b, uint8_t *result) {
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        result[i] = a[i] ^ b[i];
+    }
+}
+
+// CBC Mode Encryption
+void cbc_encrypt(uint8_t *data, size_t data_len, uint8_t *key, uint8_t *iv) {
+    uint8_t previous_block[BLOCK_SIZE];
+    memcpy(previous_block, iv, BLOCK_SIZE);
+
+    uint8_t key1[BLOCK_SIZE], key2[BLOCK_SIZE];
+    sdes_key_schedule(key, key1, key2);
+
+    for (size_t i = 0; i < data_len; i += BLOCK_SIZE) {
+        xor_blocks(data + i, previous_block, previous_block);
+        sdes_encrypt_block(previous_block, key1);
+        memcpy(data + i, previous_block, BLOCK_SIZE);
+    }
+}
+
+// CBC Mode Decryption
+void cbc_decrypt(uint8_t *data, size_t data_len, uint8_t *key, uint8_t *iv) {
+    uint8_t previous_block[BLOCK_SIZE];
+    memcpy(previous_block, iv, BLOCK_SIZE);
+
+    uint8_t key1[BLOCK_SIZE], key2[BLOCK_SIZE];
+    sdes_key_schedule(key, key1, key2);
+
+    uint8_t temp_block[BLOCK_SIZE];
+
+    for (size_t i = 0; i < data_len; i += BLOCK_SIZE) {
+        memcpy(temp_block, data + i, BLOCK_SIZE);
+        sdes_decrypt_block(temp_block, key1);
+        xor_blocks(temp_block, previous_block, data + i);
+        memcpy(previous_block, temp_block, BLOCK_SIZE);
+    }
+}
+
+// Print data in binary format
+void print_data(const uint8_t *data, size_t data_len) {
+    for (size_t i = 0; i < data_len; i++) {
+        for (int j = 7; j >= 0; j--) {
+            printf("%d", (data[i] >> j) & 1);
+        }
+        printf(" ");
+    }
+    printf("\n");
+}
+
+int main() {
+    // Example key and IV
+    uint8_t key[BLOCK_SIZE] = {0x1F, 0x7D}; // Key in binary: 01111 11101
+    uint8_t iv[BLOCK_SIZE] = {0xAA};       // IV in binary: 1010 1010
+
+    // Example plaintext
+    uint8_t plaintext[BLOCK_SIZE * 2] = {0x01, 0x23}; // Binary: 0000 0001 0010 0011
+    size_t data_len = sizeof(plaintext);
+
+    // Encrypt
+    uint8_t encrypted_data[BLOCK_SIZE * 2];
+    memcpy(encrypted_data, plaintext, data_len);
+    cbc_encrypt(encrypted_data, data_len, key, iv);
+    printf("Encrypted Data: ");
+    print_data(encrypted_data, data_len);
+
+    // Decrypt
+    uint8_t decrypted_data[BLOCK_SIZE * 2];
+    memcpy(decrypted_data, encrypted_data, data_len);
+    cbc_decrypt(decrypted_data, data_len, key, iv);
+    printf("Decrypted Data: ");
+    print_data(decrypted_data, data_len);
+
+    return 0;
+}
