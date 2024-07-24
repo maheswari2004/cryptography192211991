@@ -1,0 +1,90 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+
+// Simple XOR-based block cipher function for demonstration
+void block_cipher(uint8_t *block, const uint8_t *key) {
+    for (int i = 0; i < 16; i++) {
+        block[i] ^= key[i];
+    }
+}
+
+// CBC MAC computation function
+void compute_cbc_mac(const uint8_t *key, const uint8_t *message, size_t message_len, uint8_t *mac) {
+    uint8_t iv[16] = {0}; // Initialization Vector (IV), can be all zeros
+    uint8_t block[16];
+    uint8_t previous_block[16];
+
+    memcpy(previous_block, iv, 16);
+
+    for (size_t i = 0; i < message_len; i += 16) {
+        memcpy(block, message + i, 16);
+        for (int j = 0; j < 16; j++) {
+            block[j] ^= previous_block[j];
+        }
+        block_cipher(block, key);
+        memcpy(previous_block, block, 16);
+    }
+
+    memcpy(mac, previous_block, 16);
+}
+
+// Print a block in hexadecimal format
+void print_block(const uint8_t *block) {
+    for (int i = 0; i < 16; i++) {
+        printf("%02x", block[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+    // Example key and message
+    uint8_t key[16] = {0x1f, 0x2e, 0x3d, 0x4c, 0x5b, 0x6a, 0x79, 0x88,
+                        0x97, 0xa6, 0xb5, 0xc4, 0xd3, 0xe2, 0xf1, 0x00};
+
+    uint8_t message[32] = {0}; // Two blocks message (16 bytes each)
+    uint8_t mac[16];
+
+    // Set message blocks
+    for (int i = 0; i < 16; i++) {
+        message[i] = i;
+    }
+    for (int i = 16; i < 32; i++) {
+        message[i] = 0;
+    }
+
+    printf("Original Message: ");
+    print_block(message);
+    print_block(message + 16);
+
+    // Compute CBC MAC for the one-block message
+    printf("Computing CBC MAC for one-block message:\n");
+    compute_cbc_mac(key, message, 16, mac);
+    printf("MAC for X: ");
+    print_block(mac);
+
+    // Compute MAC for the two-block message X || (X ⊕ T)
+    uint8_t message_two_block[32];
+    uint8_t xor_block[16];
+
+    // X XOR T
+    for (int i = 0; i < 16; i++) {
+        xor_block[i] = message[i] ^ mac[i];
+    }
+
+    // Construct the two-block message
+    memcpy(message_two_block, message, 16);
+    memcpy(message_two_block + 16, xor_block, 16);
+
+    printf("Two-block Message: ");
+    print_block(message_two_block);
+    print_block(message_two_block + 16);
+
+    // Compute CBC MAC for the two-block message
+    printf("Computing CBC MAC for two-block message:\n");
+    compute_cbc_mac(key, message_two_block, 32, mac);
+    printf("MAC for X || (X ⊕ T): ");
+    print_block(mac);
+
+    return 0;
+}
