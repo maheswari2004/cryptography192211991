@@ -1,0 +1,86 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+int gcd(int a, int b) {
+    while (b != 0) {
+        int temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}
+int extended_gcd(int a, int b, int *x, int *y) {
+    if (b == 0) {
+        *x = 1;
+        *y = 0;
+        return a;
+    } else {
+        int x1, y1;
+        int gcd = extended_gcd(b, a % b, &x1, &y1);
+        *x = y1;
+        *y = x1 - (a / b) * y1;
+        return gcd;
+    }
+}
+int mod_inverse(int e, int phi) {
+    int x, y;
+    int g = extended_gcd(e, phi, &x, &y);
+    if (g != 1) {
+        printf("Inverse does not exist\n");
+        return -1;
+    } else {
+        return (x % phi + phi) % phi;
+    }
+}
+int generate_prime(int bits) {
+    int prime = 0;
+    while (1) {
+        prime = rand() % (1 << bits);
+        if (prime % 2 != 0) { 
+            int is_prime = 1;
+            for (int i = 2; i * i <= prime; ++i) {
+                if (prime % i == 0) {
+                    is_prime = 0;
+                    break;
+                }
+            }
+            if (is_prime) {
+                break;
+            }
+        }
+    }
+    return prime;
+}
+
+int main() {
+    srand(time(NULL));
+
+
+    int p = generate_prime(16);
+    int q = generate_prime(16);
+
+    
+    while (p == q) {
+        q = generate_prime(16);
+    }
+
+    int n = p * q;
+    printf("New modulus n = %d\n", n);
+
+    
+    int phi_n = (p - 1) * (q - 1);
+    printf("φ(n) = %d\n", phi_n);
+
+    
+    int e = 65537;
+    while (gcd(e, phi_n) != 1) {
+        e = rand() % phi_n;
+    }
+    printf("New public exponent e = %d\n", e);
+    int d = mod_inverse(e, phi_n);
+    if (d != -1) {
+        printf("New private exponent d = %d\n", d);
+    }
+
+    return 0;
+}
