@@ -1,0 +1,53 @@
+#include <stdio.h>
+unsigned long long mod_exp(unsigned long long base, unsigned long long exp, unsigned long long mod) {
+    unsigned long long result = 1;
+    while (exp > 0) {
+        if (exp % 2 == 1) {
+            result = (result * base) % mod;
+        }
+        base = (base * base) % mod;
+        exp = exp / 2;
+    }
+    return result;
+}
+unsigned long long rsa_encrypt_char(unsigned long long plaintext, unsigned long long e, unsigned long long n) {
+    return mod_exp(plaintext, e, n);
+}
+
+// Function to convert a character 'A'-'Z' to integer 0-25
+int char_to_int(char c) {
+    if (c >= 'A' && c <= 'Z') {
+        return c - 'A';
+    } else {
+        return -1; // Invalid character
+    }
+}
+char int_to_char(int num) {
+    if (num >= 0 && num <= 25) {
+        return num + 'A';
+    } else {
+        return '?'; // Invalid number
+    }
+}
+
+int main() {
+    unsigned long long e = 65537; // Public exponent (typically a small prime)
+    unsigned long long n = 1234567890123456789012345678901234567890ULL; // Example large modulus n
+    char message[] = "HELLO"; // Example plaintext message
+    char encrypted_message[sizeof(message)]; 
+    for (int i = 0; message[i] != '\0'; ++i) {
+        int char_value = char_to_int(message[i]);
+        if (char_value >= 0 && char_value <= 25) {
+            unsigned long long encrypted_char = rsa_encrypt_char(char_value, e, n);
+            encrypted_message[i] = int_to_char(encrypted_char % 26); // Map back to 'A'-'Z'
+        } else {
+          
+            encrypted_message[i] = message[i];
+        }
+    }
+    encrypted_message[sizeof(message) - 1] = '\0';
+    printf("Original Message: %s\n", message);
+    printf("Encrypted Message: %s\n", encrypted_message);
+
+    return 0;
+}
