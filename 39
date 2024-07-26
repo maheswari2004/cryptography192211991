@@ -1,0 +1,102 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define ALPHABET_SIZE 26
+
+// Function to calculate letter frequency
+void calculate_frequency(const char *text, int *frequency) {
+    memset(frequency, 0, ALPHABET_SIZE * sizeof(int));
+    for (int i = 0; text[i]; i++) {
+        if (isalpha(text[i])) {
+            char c = toupper(text[i]);
+            frequency[c - 'A']++;
+        }
+    }
+}
+
+// Function to shift a letter by a given key
+char shift_letter(char c, int key) {
+    if (isalpha(c)) {
+        char base = islower(c) ? 'a' : 'A';
+        return (c - base + key + ALPHABET_SIZE) % ALPHABET_SIZE + base;
+    }
+    return c;
+}
+
+// Function to decrypt the ciphertext with a given key
+void decrypt(const char *ciphertext, char *plaintext, int key) {
+    for (int i = 0; ciphertext[i]; i++) {
+        plaintext[i] = shift_letter(ciphertext[i], key);
+    }
+    plaintext[strlen(ciphertext)] = '\0';
+}
+
+// Function to print plaintexts with their frequency scores
+void print_plaintexts_with_scores(const char *ciphertext, int top_n) {
+    // Assume some standard frequencies for English letters
+    const double english_frequencies[ALPHABET_SIZE] = {
+        8.17, 1.49, 2.78, 4.25, 12.70, 2.23, 2.02, 6.09, 6.97, 0.10, 0.69, 3.67,
+        3.50, 7.58, 1.02, 5.99, 6.32, 9.05, 5.57, 0.98, 2.11, 0.15, 1.97, 0.07,
+        5.00, 1.28, 0.14, 0.40, 2.40, 0.27, 1.87, 0.02, 0.53, 0.60, 0.95, 0.03,
+        0.04, 0.11, 0.02, 0.01
+    };
+
+    int ciphertext_length = strlen(ciphertext);
+    double scores[ALPHABET_SIZE] = {0};
+    char plaintext[1024];
+
+    for (int key = 0; key < ALPHABET_SIZE; key++) {
+        decrypt(ciphertext, plaintext, key);
+        
+        int frequency[ALPHABET_SIZE] = {0};
+        calculate_frequency(plaintext, frequency);
+
+        double score = 0.0;
+        for (int i = 0; i < ALPHABET_SIZE; i++) {
+            score += frequency[i] * english_frequencies[i];
+        }
+        scores[key] = score;
+    }
+
+    // Print top N plaintexts based on score
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        for (int j = i + 1; j < ALPHABET_SIZE; j++) {
+            if (scores[j] > scores[i]) {
+                // Swap scores
+                double temp_score = scores[i];
+                scores[i] = scores[j];
+                scores[j] = temp_score;
+
+                // Swap keys
+                int temp_key = j;
+                j = i;
+                i = temp_key;
+            }
+        }
+    }
+
+    printf("Top %d possible plaintexts:\n", top_n);
+    for (int i = 0; i < top_n && i < ALPHABET_SIZE; i++) {
+        int key = i;
+        decrypt(ciphertext, plaintext, key);
+        printf("Key %d: %s\n", key, plaintext);
+    }
+}
+
+int main() {
+    char ciphertext[1024];
+    int top_n;
+
+    printf("Enter the ciphertext: ");
+    fgets(ciphertext, sizeof(ciphertext), stdin);
+    ciphertext[strcspn(ciphertext, "\n")] = '\0'; // Remove newline character
+
+    printf("Enter the number of top plaintexts to display: ");
+    scanf("%d", &top_n);
+
+    print_plaintexts_with_scores(ciphertext, top_n);
+
+    return 0;
+}
