@@ -1,0 +1,72 @@
+
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+// Constants for block sizes
+#define BLOCK_SIZE 16  // 128 bits
+#define CONST_128 0x87
+
+// Function to print a block in hex
+void print_block(uint8_t *block, int size) {
+    for (int i = 0; i < size; i++) {
+        printf("%02x", block[i]);
+    }
+    printf("\n");
+}
+
+// Placeholder for the encryption function
+void encrypt_block(uint8_t *key, uint8_t *input, uint8_t *output) {
+    // This should be replaced with actual encryption logic
+    // Here we just copy the input to output for demonstration purposes
+    memcpy(output, input, BLOCK_SIZE);
+}
+
+// Function to left shift a block by one bit
+void left_shift(uint8_t *input, uint8_t *output, int size) {
+    uint8_t overflow = 0;
+    for (int i = size - 1; i >= 0; i--) {
+        output[i] = (input[i] << 1) | overflow;
+        overflow = (input[i] & 0x80) ? 1 : 0;
+    }
+}
+
+// Function to generate subkeys
+void generate_subkeys(uint8_t *key, uint8_t *K1, uint8_t *K2) {
+    uint8_t L[BLOCK_SIZE] = {0};
+    uint8_t tmp[BLOCK_SIZE] = {0};
+
+    // Step 1: Generate L
+    uint8_t zero_block[BLOCK_SIZE] = {0};
+    encrypt_block(key, zero_block, L);
+
+    // Step 2: Generate K1
+    left_shift(L, tmp, BLOCK_SIZE);
+    if (L[0] & 0x80) {
+        tmp[BLOCK_SIZE - 1] ^= CONST_128;
+    }
+    memcpy(K1, tmp, BLOCK_SIZE);
+
+    // Step 3: Generate K2
+    left_shift(K1, tmp, BLOCK_SIZE);
+    if (K1[0] & 0x80) {
+        tmp[BLOCK_SIZE - 1] ^= CONST_128;
+    }
+    memcpy(K2, tmp, BLOCK_SIZE);
+}
+
+int main() {
+    uint8_t key[BLOCK_SIZE] = {0};  // Example key, should be properly initialized
+    uint8_t K1[BLOCK_SIZE] = {0};
+    uint8_t K2[BLOCK_SIZE] = {0};
+
+    generate_subkeys(key, K1, K2);
+
+    printf("K1: ");
+    print_block(K1, BLOCK_SIZE);
+
+    printf("K2: ");
+    print_block(K2, BLOCK_SIZE);
+
+    return 0;
+}
