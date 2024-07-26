@@ -1,0 +1,89 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Function to calculate the modular multiplicative inverse of a modulo m
+int mod_inverse(int a, int m) {
+    a = a % m;
+    for (int x = 1; x < m; x++) {
+        if ((a * x) % m == 1) {
+            return x;
+        }
+    }
+    return -1; // No modular inverse exists if a and m are not coprime
+}
+
+// Function to check if two numbers are coprime
+int are_coprime(int a, int b) {
+    while (b != 0) {
+        int temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a == 1;
+}
+
+// Function to encrypt plaintext using the affine cipher
+void affine_encrypt(const char *plaintext, char *ciphertext, int a, int b) {
+    int len = strlen(plaintext);
+    for (int i = 0; i < len; i++) {
+        char ch = plaintext[i];
+        if (ch >= 'A' && ch <= 'Z') {
+            ciphertext[i] = (a * (ch - 'A') + b) % 26 + 'A';
+        } else if (ch >= 'a' && ch <= 'z') {
+            ciphertext[i] = (a * (ch - 'a') + b) % 26 + 'a';
+        } else {
+            ciphertext[i] = ch; // Non-alphabet characters remain unchanged
+        }
+    }
+    ciphertext[len] = '\0';
+}
+
+// Function to decrypt ciphertext using the affine cipher
+void affine_decrypt(const char *ciphertext, char *plaintext, int a, int b) {
+    int a_inv = mod_inverse(a, 26);
+    int len = strlen(ciphertext);
+    for (int i = 0; i < len; i++) {
+        char ch = ciphertext[i];
+        if (ch >= 'A' && ch <= 'Z') {
+            plaintext[i] = (a_inv * (ch - 'A' - b + 26) % 26 + 26) % 26 + 'A';
+        } else if (ch >= 'a' && ch <= 'z') {
+            plaintext[i] = (a_inv * (ch - 'a' - b + 26) % 26 + 26) % 26 + 'a';
+        } else {
+            plaintext[i] = ch; // Non-alphabet characters remain unchanged
+        }
+    }
+    plaintext[len] = '\0';
+}
+
+int main() {
+    char plaintext[256];
+    int a, b;
+
+    printf("Enter the plaintext: ");
+    fgets(plaintext, sizeof(plaintext), stdin);
+    plaintext[strcspn(plaintext, "\n")] = '\0'; // Remove the newline character
+
+    // Get key parameters a and b
+    do {
+        printf("Enter a value for a (must be coprime with 26): ");
+        scanf("%d", &a);
+        if (!are_coprime(a, 26)) {
+            printf("a and 26 are not coprime. Try again.\n");
+        }
+    } while (!are_coprime(a, 26));
+
+    printf("Enter a value for b: ");
+    scanf("%d", &b);
+
+    char ciphertext[256];
+    char decrypted_text[256];
+
+    affine_encrypt(plaintext, ciphertext, a, b);
+    printf("Encrypted text: %s\n", ciphertext);
+
+    affine_decrypt(ciphertext, decrypted_text, a, b);
+    printf("Decrypted text: %s\n", decrypted_text);
+
+    return 0;
+}
