@@ -1,0 +1,119 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define ALPHABET_SIZE 26
+
+// Function to calculate letter frequency
+void calculate_frequency(const char *text, int *frequency) {
+    memset(frequency, 0, ALPHABET_SIZE * sizeof(int));
+    for (int i = 0; text[i]; i++) {
+        if (isalpha(text[i])) {
+            char c = toupper(text[i]);
+            frequency[c - 'A']++;
+        }
+    }
+}
+
+// Function to apply a substitution cipher
+void apply_substitution(const char *ciphertext, char *plaintext, const char *substitution) {
+    for (int i = 0; ciphertext[i]; i++) {
+        if (isalpha(ciphertext[i])) {
+            char base = islower(ciphertext[i]) ? 'a' : 'A';
+            plaintext[i] = substitution[toupper(ciphertext[i]) - 'A'] + (ciphertext[i] - base);
+        } else {
+            plaintext[i] = ciphertext[i];
+        }
+    }
+    plaintext[strlen(ciphertext)] = '\0';
+}
+
+// Function to calculate the score of a plaintext based on letter frequencies
+double calculate_score(const int *frequency) {
+    // Assume standard English letter frequencies
+    const double english_frequencies[ALPHABET_SIZE] = {
+        8.17, 1.49, 2.78, 4.25, 12.70, 2.23, 2.02, 6.09, 6.97, 0.10, 0.69, 3.67,
+        3.50, 7.58, 1.02, 5.99, 6.32, 9.05, 5.57, 0.98, 2.11, 0.15, 1.97, 0.07,
+        5.00, 1.28, 0.14, 0.40, 2.40, 0.27, 1.87, 0.02, 0.53, 0.60, 0.95, 0.03,
+        0.04, 0.11, 0.02, 0.01
+    };
+    double score = 0.0;
+    int total = 0;
+
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        total += frequency[i];
+    }
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        double observed_freq = (double)frequency[i] / total * 100;
+        score += observed_freq * english_frequencies[i];
+    }
+    return score;
+}
+
+// Function to generate all possible substitutions and rank them
+void generate_and_rank_plaintexts(const char *ciphertext, int top_n) {
+    int frequency[ALPHABET_SIZE] = {0};
+    char substitution[ALPHABET_SIZE];
+    char plaintext[1024];
+    double scores[ALPHABET_SIZE];
+    int best_keys[ALPHABET_SIZE];
+    int num_keys = 0;
+
+    calculate_frequency(ciphertext, frequency);
+
+    // Try all possible substitutions
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        for (int j = 0; j < ALPHABET_SIZE; j++) {
+            substitution[i] = 'A' + (i + j) % ALPHABET_SIZE;
+        }
+        substitution[ALPHABET_SIZE] = '\0';
+        apply_substitution(ciphertext, plaintext, substitution);
+        double score = calculate_score(frequency);
+        scores[num_keys] = score;
+        best_keys[num_keys] = i;
+        num_keys++;
+    }
+
+    // Print top N plaintexts based on score
+    for (int i = 0; i < top_n && i < num_keys; i++) {
+        for (int j = i + 1; j < num_keys; j++) {
+            if (scores[j] > scores[i]) {
+                double temp_score = scores[i];
+                scores[i] = scores[j];
+                scores[j] = temp_score;
+
+                int temp_key = best_keys[i];
+                best_keys[i] = best_keys[j];
+                best_keys[j] = temp_key;
+            }
+        }
+    }
+
+    printf("Top %d possible plaintexts:\n", top_n);
+    for (int i = 0; i < top_n && i < num_keys; i++) {
+        int key = best_keys[i];
+        for (int j = 0; j < ALPHABET_SIZE; j++) {
+            substitution[j] = 'A' + (j + key) % ALPHABET_SIZE;
+        }
+        substitution[ALPHABET_SIZE] = '\0';
+        apply_substitution(ciphertext, plaintext, substitution);
+        printf("Key %d: %s\n", key, plaintext);
+    }
+}
+
+int main() {
+    char ciphertext[1024];
+    int top_n;
+
+    printf("Enter the ciphertext: ");
+    fgets(ciphertext, sizeof(ciphertext), stdin);
+    ciphertext[strcspn(ciphertext, "\n")] = '\0'; // Remove newline character
+
+    printf("Enter the number of top plaintexts to display: ");
+    scanf("%d", &top_n);
+
+    generate_and_rank_plaintexts(ciphertext, top_n);
+
+    return 0;
+}
