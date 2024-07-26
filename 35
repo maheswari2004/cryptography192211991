@@ -1,0 +1,70 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+// Function to generate a random key
+void generate_key(int *key, int length) {
+    for (int i = 0; i < length; i++) {
+        key[i] = rand() % 26;
+    }
+}
+
+// Function to encrypt the plaintext using the one-time pad version of the Vigenère cipher
+void encrypt(const char *plaintext, char *ciphertext, const int *key, int length) {
+    for (int i = 0; i < length; i++) {
+        if (plaintext[i] >= 'A' && plaintext[i] <= 'Z') {
+            ciphertext[i] = ((plaintext[i] - 'A' + key[i]) % 26) + 'A';
+        } else if (plaintext[i] >= 'a' && plaintext[i] <= 'z') {
+            ciphertext[i] = ((plaintext[i] - 'a' + key[i]) % 26) + 'a';
+        } else {
+            ciphertext[i] = plaintext[i]; // Non-alphabet characters remain unchanged
+        }
+    }
+    ciphertext[length] = '\0';
+}
+
+// Function to decrypt the ciphertext using the one-time pad version of the Vigenère cipher
+void decrypt(const char *ciphertext, char *plaintext, const int *key, int length) {
+    for (int i = 0; i < length; i++) {
+        if (ciphertext[i] >= 'A' && ciphertext[i] <= 'Z') {
+            plaintext[i] = ((ciphertext[i] - 'A' - key[i] + 26) % 26) + 'A';
+        } else if (ciphertext[i] >= 'a' && ciphertext[i] <= 'z') {
+            plaintext[i] = ((ciphertext[i] - 'a' - key[i] + 26) % 26) + 'a';
+        } else {
+            plaintext[i] = ciphertext[i]; // Non-alphabet characters remain unchanged
+        }
+    }
+    plaintext[length] = '\0';
+}
+
+// Main function to demonstrate encryption and decryption
+int main() {
+    srand(time(NULL)); // Seed the random number generator
+
+    char plaintext[256];
+    printf("Enter the plaintext: ");
+    fgets(plaintext, sizeof(plaintext), stdin);
+    plaintext[strcspn(plaintext, "\n")] = '\0'; // Remove the newline character
+
+    int length = strlen(plaintext);
+    int key[length];
+    char ciphertext[length + 1];
+    char decrypted_text[length + 1];
+
+    generate_key(key, length);
+
+    printf("Generated key: ");
+    for (int i = 0; i < length; i++) {
+        printf("%d ", key[i]);
+    }
+    printf("\n");
+
+    encrypt(plaintext, ciphertext, key, length);
+    printf("Encrypted text: %s\n", ciphertext);
+
+    decrypt(ciphertext, decrypted_text, key, length);
+    printf("Decrypted text: %s\n", decrypted_text);
+
+    return 0;
+}
