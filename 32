@@ -1,0 +1,58 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+// Placeholder for cryptographic functions
+// In a real implementation, use a library like OpenSSL
+
+// Function to generate a random value for DSA
+unsigned int generate_random_k() {
+    return rand();
+}
+
+// Function to simulate DSA signature (simplified)
+void dsa_sign(const char* message, unsigned int k, unsigned int* r, unsigned int* s) {
+    unsigned int hash = 0;
+    for (size_t i = 0; i < strlen(message); i++) {
+        hash += message[i];
+    }
+    *r = hash + k;
+    *s = hash - k;
+}
+
+// Function to simulate RSA signature (simplified)
+unsigned int rsa_sign(const char* message) {
+    unsigned int hash = 0;
+    for (size_t i = 0; i < strlen(message); i++) {
+        hash += message[i];
+    }
+    // Simulate private key encryption
+    return hash * 3;  // Placeholder for actual RSA encryption
+}
+
+int main() {
+    srand(time(NULL));  // Seed the random number generator
+
+    const char* message = "Hello, world!";
+    
+    // DSA Signatures
+    unsigned int dsa_r1, dsa_s1, dsa_r2, dsa_s2;
+    unsigned int k1 = generate_random_k();
+    unsigned int k2 = generate_random_k();
+    
+    dsa_sign(message, k1, &dsa_r1, &dsa_s1);
+    dsa_sign(message, k2, &dsa_r2, &dsa_s2);
+    
+    printf("DSA Signature 1: (r: %u, s: %u)\n", dsa_r1, dsa_s1);
+    printf("DSA Signature 2: (r: %u, s: %u)\n", dsa_r2, dsa_s2);
+    
+    // RSA Signatures
+    unsigned int rsa_sig1 = rsa_sign(message);
+    unsigned int rsa_sig2 = rsa_sign(message);
+    
+    printf("RSA Signature 1: %u\n", rsa_sig1);
+    printf("RSA Signature 2: %u\n", rsa_sig2);
+    
+    return 0;
+}
